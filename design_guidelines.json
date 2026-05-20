@@ -1,0 +1,110 @@
+{
+  "theme": "dark",
+  "archetype": "Industrial Decay / Arcade Pixel Art",
+  "typography": {
+    "headings": {
+      "fontFamily": "'Press Start 2P', monospace",
+      "strategy": "Blocky, arcade style, pixel-art compatible, uppercase, tight tracking",
+      "classes": "font-['Press_Start_2P'] tracking-tighter uppercase text-[#ff7a18] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"
+    },
+    "body": {
+      "fontFamily": "'VT323', monospace",
+      "strategy": "Pixelated monospaced, technical, high readability for stats",
+      "classes": "font-['VT323'] text-2xl text-[#a3a3a3] uppercase"
+    }
+  },
+  "colors": {
+    "primary": "#ff7a18",
+    "primaryHover": "#ff923f",
+    "background": "#0a0908",
+    "surface": "#18181b",
+    "surfaceBorder": "#3f3f46",
+    "accent": "#4ade80",
+    "danger": "#dc2626",
+    "metalDark": "#09090b",
+    "rustMid": "#9a3412",
+    "rustLight": "#ffa872"
+  },
+  "spacing": {
+    "strategy": "Dense arcade HUD spacing, generous menu spacing. Use Tailwind scales.",
+    "hud": "p-2 gap-2",
+    "menus": "p-6 md:p-12 gap-6"
+  },
+  "components": {
+    "buttons": {
+      "style": "Large orange beveled buttons, pixel-art aesthetic. Heavy borders.",
+      "classes": "bg-[#ff7a18] text-black border-b-[4px] border-r-[4px] border-[#9a3412] border-t-[4px] border-l-[4px] border-[#ffa872] active:border-b-0 active:border-r-0 active:border-t-[4px] active:border-l-[4px] active:translate-y-1 active:translate-x-1 rounded-none uppercase font-bold px-6 py-3 font-['VT323'] text-3xl transition-transform"
+    },
+    "panels": {
+      "style": "Rusted metal wall background, bullet-hole details. Use dark grimy colors with inset shadow.",
+      "classes": "bg-[#18181b] border-4 border-[#3f3f46] shadow-[inset_0_0_30px_rgba(0,0,0,1)] relative overflow-hidden"
+    },
+    "bars": {
+      "hp": "Green segmented bar with skull icon. Flex container with small gaps.",
+      "hp_classes": "flex gap-1 h-6 bg-[#09090b] p-1 border-2 border-[#18181b]",
+      "hp_segment": "flex-1 bg-[#4ade80] shadow-[inset_0_0_5px_rgba(0,0,0,0.5)]",
+      "ammo": "Segmented orange bullet bar.",
+      "ammo_classes": "flex gap-1 h-4 bg-[#09090b] p-1 border-2 border-[#18181b]",
+      "ammo_segment": "flex-1 bg-[#ff7a18] shadow-[inset_0_0_5px_rgba(0,0,0,0.5)]"
+    },
+    "badges": {
+      "style": "Small biohazard-colored or dark metal badges for stats like Dash CD, GAMBLE multiplier.",
+      "classes": "bg-[#09090b] border-2 border-[#ff7a18] text-[#ff7a18] px-2 py-1 font-['VT323'] text-xl"
+    }
+  },
+  "canvas": {
+    "rendering": "2D Canvas context. No anti-aliasing (ctx.imageSmoothingEnabled = false) to preserve pixel art. Sprites drawn via ctx.drawImage().",
+    "heroSize": "Radius ~16-22px (drawn 32x32 or 48x48)",
+    "enemySize": "Radius 14-22px",
+    "rigSize": "Radius ~44px (drawn 115x115)"
+  },
+  "image_urls": {
+    "hero_sprite": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/5c8fcd9a-3e52-42cf-8556-c6839c91ae67/images/8c4a0f641abb4c47cb63e2f4cf263dc2943e6dac633f7ee01eb75bb477daf558.png",
+      "description": "Top-down view of a post-apocalyptic survivor, pixel art style. Drawn facing UP (0 degrees). Must be rotated by the engine to match facing angle."
+    },
+    "enemy_shambler": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/5c8fcd9a-3e52-42cf-8556-c6839c91ae67/images/96eb48cf1a7bae00f74141046240f9bab2c378e800ae89e3e217eec75bb351ae.png",
+      "description": "Top-down view of a weak mutant zombie (shambler), pixel art style. Drawn facing RIGHT. Must be mirrored horizontally by the engine to face travel direction."
+    },
+    "enemy_brute": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/5c8fcd9a-3e52-42cf-8556-c6839c91ae67/images/4c61520541ead7e2623dcd4692dae1aaa0841e6d5d2922c5ca4a119d644c92ef.png",
+      "description": "Top-down view of a large heavy mutant zombie (brute), pixel art style. Drawn facing RIGHT. Must be mirrored horizontally by the engine to face travel direction."
+    },
+    "background_texture": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/5c8fcd9a-3e52-42cf-8556-c6839c91ae67/images/0a1c3b1561cf59fdb0f93e650b1378f45cdafad0b57d8b66503b49d35ff1ce64.png",
+      "description": "Seamless top-down background texture of a rusted, gritty, decaying industrial metal floor."
+    }
+  },
+  "assets": {
+    "images_provided": {
+      "rig_new.jpeg": "/app/frontend/src/assets/game/new/rig_new.jpeg",
+      "ui_template.png": "/app/frontend/src/assets/game/new/ui_template.png"
+    }
+  },
+  "prompts_for_main_agent": {
+    "hero": "Top-down view of a post-apocalyptic survivor, pixel art style, wearing a grimy industrial jumpsuit and a backpack, holding a generic two-handed weapon. The character must be facing exactly UP (0 degrees). Clear silhouette, no background (transparent or solid green for chroma key). Muted rust and olive colors.",
+    "shambler": "Top-down view of a weak mutant zombie (shambler), pixel art style, decaying flesh, tattered rags. Facing exactly RIGHT. Grotesque biohazard green and brown tones. Clear silhouette, solid background for easy removal.",
+    "brute": "Top-down view of a large heavy mutant zombie (brute), pixel art style, bulky and muscular, mutated armor-like skin, rusted metal embedded in flesh. Facing exactly RIGHT. Dark grimy colors. Clear silhouette, solid background.",
+    "arena_floor": "A seamless top-down background texture of a rusted, gritty, decaying industrial metal floor. Bullet holes, dark grime, blue-green oxidation, and scratched iron plates. No specific focal point, repeatable pattern style. Dark and moody lighting."
+  },
+  "accessibility": {
+    "contrast": "High contrast between text and dark metal backgrounds. Use bright orange and white text.",
+    "motion": "Ensure canvas runs at 60fps, minimal unnecessary UI animations to keep focus on gameplay."
+  },
+  "testing": {
+    "data_test_ids": "Mandatory for all buttons, tabs, input fields in the React UI (e.g. data-testid='start-run-button', data-testid='upgrade-card')."
+  },
+  "instructions_to_main_agent": [
+    "IMPORTANT: Load Google Fonts 'Press Start 2P' and 'VT323' in the index.html or via @import in CSS to achieve the arcade pixel art look.",
+    "Implement the React UI (Title, Upgrades, Modal, Summary) as overlays on top of the Canvas. Do not change gameplay logic.",
+    "Apply the exact 'buttons.classes' defined for all clickable elements to match the arcade-industrial UI mockup.",
+    "Use 'VT323' font for all HUD stats, and 'Press Start 2P' for the LAST SCRAP title and major headings.",
+    "For the Canvas, load the AI-generated sprites provided in image_urls, along with 'rig_new.jpeg'.",
+    "Rotate the hero sprite in the canvas drawing logic so that it matches the facing angle (assuming base sprite points UP).",
+    "Mirror the enemy sprites horizontally based on their velocity x-component (assuming base sprite points RIGHT).",
+    "Set context.imageSmoothingEnabled = false when drawing sprites to the canvas to keep pixel art crisp.",
+    "Ensure the HUD elements (HP bars, ammo, icons) are rendered in React over the canvas using absolute positioning and Tailwind classes.",
+    "Do not use generic 'Shadcn' components for the game UI menus, build them with standard HTML/Tailwind according to the design guidelines to maintain the gritty custom arcade look."
+  ]
+}
