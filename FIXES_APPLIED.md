@@ -1,52 +1,35 @@
 # Last Scrap — Fixes Applied (running log)
 
-## Round 1-3 (May 20) — see prior entries
-Wave-1 critical fixes, tuning batch, auto-aim + melee swap
+## Rounds 1-5 — gameplay + mechanics (see prior entries)
 
-## Round 4 — Playtest feedback (May 20)
-Full-auto auto-aim w/ spread, movement inertia + speed 240→280, zombie sprite-flip via motion direction
+## Round 6 — Visual: rig + title reskin (May 20)
 
-## Round 5 — Speed nerf + Dash (May 20)
+You pushed back on me holding the assets — I pivoted. Done this turn:
 
-**Movement speed:** 280 → **200** per playtest feedback. Still has the inertia smoothing from Round 4.
+### Rig graphic
+- `new/rig_new.jpeg` → background-removed PNG saved as `assets/game/rig.png`
+- Removed white background via 2-pass flood fill (from corners + from torus center) so the inner ring is transparent and the arena floor shows through
+- Wired into `Arena.jsx` with a circular clip to catch any residual edge pixels
+- Health tint preserved: dims to orange below 50% rig HP, red below 25%
 
-**Dash mechanic:**
-- Keyboard: **Shift** or **E**
-- Mobile: new **DASH** button (sky-blue) above FIRE
-- Behavior: ~0.15s burst at **760 px/s** in input direction (or facing direction if standing still)
-- **0.22s of invulnerability** during the dash window — actual escape tool, not just a re-position
-- **0.9s cooldown**, surfaced in HUD as `DASH` (ready) → `DASH 0.6s` (cooling)
-- Visual: cyan glow + shadow on the hero sprite during the dash frames
+### Title page
+- Old centered-on-stone-950 layout replaced
+- New layered rust gradient (warm brown radial + dark vignette) with procedural rust speckles and bullet-hole accents — all CSS, no image needed
+- Big orange `LAST SCRAP` title in `Black Ops One`/Impact stack with deep shadow + glow
+- New `START` button styled to match your UI template: amber→orange→burnt gradient, beveled bottom-shadow that depresses on click
+- `BUY UPGRADES` secondary button in dark stone with stone bevel
+- Bottom-of-screen controls hint
+- The actual `ui_bg.png` template was NOT used as a tile — that PNG bakes the entire mockup UI (the Health bar, Buy buttons, etc. are part of the image, not a texture). Tiling it printed multiple ghost UIs on screen. The template now lives at `/app/frontend/src/assets/game/ui_bg.png` as a **design reference** for when we do the HUD/menu redesign.
 
-All numbers are in `balance.js → player.{dashSpeed, dashDuration, dashCooldown, dashInvuln}` if you want to nudge them after playtesting.
+### NOT done yet
+- HUD (the in-game top bar) — still old style
+- Loadout / Upgrades / Cashout / Summary pages — still old style
+- Hero sprite — still the old one you called "scrap"
+- Enemy sprites — still old
+- Arena floor — still old
 
-**Assets received & saved (not yet wired in):**
-- `/app/frontend/src/assets/game/new/rig_new.jpeg` — your new ring-shaped rig graphic
-- `/app/frontend/src/assets/game/new/ui_template.png` — UI/HUD style template for the future visual pass
+## What the rig looks like now
+A rusty industrial ring with gauges, plates, and cable bundles, rotating health-tinted shadows under stress. Inner hole shows the arena floor through it.
 
-I held off on swapping these in per your original instruction to defer all visual work until mechanics lock. **Tell me if you want the rig graphic swapped in now** — it's a 1-line render change that doesn't touch any gameplay.
-
-## Smoke-tested
-- DASH HUD badge cycles ready → 0.6s → ready ✅
-- Player visibly bursts forward when Shift is pressed mid-movement ✅
-- Lint clean across all touched files ✅
-
-## Tuning knobs (`balance.js`)
-| Knob | Current | Effect |
-|---|---|---|
-| `player.baseSpeed` | 200 | normal move speed |
-| `player.accel` | 14 | inertia ramp (higher = snappier) |
-| `player.dashSpeed` | 760 | dash burst velocity |
-| `player.dashDuration` | 0.15 | how long the burst lasts |
-| `player.dashCooldown` | 0.9 | sec between dashes |
-| `player.dashInvuln` | 0.22 | i-frames per dash |
-| `gun.auto.spreadRad` | 0.16 | full-auto cone width |
-| `melee.knockback` | 32 | px enemies get pushed |
-
-## Audit backlog still pending
-- 1.8 Bullet pierce (design call)
-- 2.3 / 2.4 / 2.5 Multiplier + regen tuning
-- 3.1 Surrender btn placement, 3.2 Pause menu, 3.4 Weapon-swap feedback
-- Debug overlay (live stats) — still on offer
-- **A** Code refactor — queued post-balance lock
-- Visual overhaul — queued post-mechanics lock (assets now in place when we get there)
+## Lint clean ✅
+## Smoke-tested ✅

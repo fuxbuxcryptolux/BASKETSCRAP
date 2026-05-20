@@ -5,6 +5,7 @@ import arenaUrl from "../../assets/game/arena.png";
 import heroUrl from "../../assets/game/hero.png";
 import bruteUrl from "../../assets/game/brute.png";
 import shamblerUrl from "../../assets/game/shambler.png";
+import rigUrl from "../../assets/game/rig.png";
 
 const loadImg = (src) => {
   const i = new Image();
@@ -16,6 +17,7 @@ const IMG = {
   hero: loadImg(heroUrl),
   brute: loadImg(bruteUrl),
   shambler: loadImg(shamblerUrl),
+  rig: loadImg(rigUrl),
 };
 
 const MOVE_KEYS = {
@@ -94,13 +96,29 @@ export function Arena() {
 
       const rig = s.rig;
       const rigPct = rig.hp / rig.maxHp;
-      ctx.fillStyle = "#3a2f25";
-      ctx.beginPath(); ctx.arc(rig.pos.x, rig.pos.y, BALANCE.arena.rigRadius + 6, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = rigPct > 0.5 ? "#c9a84c" : rigPct > 0.25 ? "#d28a3a" : "#a04848";
-      ctx.beginPath(); ctx.arc(rig.pos.x, rig.pos.y, BALANCE.arena.rigRadius, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#1a1614";
-      ctx.font = "bold 18px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("RIG", rig.pos.x, rig.pos.y);
+      // [visual] new ring-shaped rig graphic, clipped to a circle so any
+      // residual background pixels from the source jpg don't leak.
+      const rigDrawR = BALANCE.arena.rigRadius * 2.6;
+      if (IMG.rig.complete && IMG.rig.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(rig.pos.x, rig.pos.y, rigDrawR / 2 - 2, 0, Math.PI * 2);
+        ctx.clip();
+        if (rigPct < 0.5) {
+          ctx.shadowColor = rigPct < 0.25 ? "#a04848" : "#d28a3a";
+          ctx.shadowBlur = 16;
+        }
+        ctx.drawImage(IMG.rig, rig.pos.x - rigDrawR / 2, rig.pos.y - rigDrawR / 2, rigDrawR, rigDrawR);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "#3a2f25";
+        ctx.beginPath(); ctx.arc(rig.pos.x, rig.pos.y, BALANCE.arena.rigRadius + 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = rigPct > 0.5 ? "#c9a84c" : rigPct > 0.25 ? "#d28a3a" : "#a04848";
+        ctx.beginPath(); ctx.arc(rig.pos.x, rig.pos.y, BALANCE.arena.rigRadius, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#1a1614";
+        ctx.font = "bold 18px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("RIG", rig.pos.x, rig.pos.y);
+      }
 
       ctx.imageSmoothingEnabled = false;
       for (const e of s.enemies) {
