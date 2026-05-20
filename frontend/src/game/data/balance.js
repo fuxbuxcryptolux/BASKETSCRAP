@@ -20,10 +20,11 @@ export const BALANCE = {
     delayAfterHitSec: 2.0,
   },
   melee: {
-    baseDamage: 18,
-    range: 56,
-    cooldown: 0.45,
+    baseDamage: 28,           // [fix 1.4c] buffed 18 -> 28
+    range: 64,                // [fix 1.4c] 56 -> 64
+    cooldown: 0.4,
     arcDeg: 130,
+    knockback: 32,            // [fix 1.4c] pixels pushed on hit
   },
   gun: {
     semi: {
@@ -50,7 +51,9 @@ export const BALANCE = {
   },
   rig: {
     baseMaxIntegrity: 300,
-    passiveScrapPerSec: 2,
+    // [fix 2.2] passive scrap now scales with wave so wave-1 cash-out isn't
+    // dominant. wave 1 = 0.8/s, wave 5 = 2.4/s, wave 10 = 4.4/s.
+    passiveScrapPerSec: (wave) => 0.4 + 0.4 * wave,
     contactTickInterval: 0.6,
   },
   cashoutSplits: {
@@ -59,7 +62,8 @@ export const BALANCE = {
     death: { bank: 0.0, lose: 1.0 },
     surrender: { bank: 0.4, lose: 0.6 },
   },
-  waveClearBonus: (wave) => 15 + wave * 5,
+  // [fix 2.2] wave-clear bonus weighted toward later waves so pushing pays.
+  waveClearBonus: (wave) => 10 + wave * 8,
   gamble: {
     options: [
       { mult: 2, penalty: 0.5, label: "2x" },

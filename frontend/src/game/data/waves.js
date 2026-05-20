@@ -1,8 +1,10 @@
+// [fix 1.9] Wave 1 spawns now overlap more so the player must actually engage
+// instead of cleanly picking off arrivals one at a time. Wave 2-3 also tightened.
 const SCRIPTED = [
-  { spawns: { shambler: 5 }, spawnIntervalSec: 1.3 },
-  { spawns: { shambler: 9 }, spawnIntervalSec: 1.1 },
-  { spawns: { shambler: 10, brute: 1 }, spawnIntervalSec: 1.0 },
-  { spawns: { shambler: 12, brute: 2 }, spawnIntervalSec: 0.9 },
+  { spawns: { shambler: 6 }, spawnIntervalSec: 1.0 },
+  { spawns: { shambler: 9 }, spawnIntervalSec: 0.95 },
+  { spawns: { shambler: 10, brute: 1 }, spawnIntervalSec: 0.9 },
+  { spawns: { shambler: 12, brute: 2 }, spawnIntervalSec: 0.85 },
   { spawns: { shambler: 14, brute: 3 }, spawnIntervalSec: 0.8 },
 ];
 

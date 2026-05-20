@@ -25,6 +25,7 @@ const MOVE_KEYS = {
   d: ["x", 1],  ArrowRight: ["x", 1],
 };
 const FIRE_KEYS = new Set([" ", "Space", "j", "J"]);
+const SWAP_KEYS = new Set(["q", "Q"]);
 
 export function Arena() {
   const canvasRef = useRef(null);
@@ -33,6 +34,7 @@ export function Arena() {
   const keysRef = useRef(new Set());
   const fireHeldRef = useRef(false);
   const firePressedQueueRef = useRef(false);
+  const swapPressedQueueRef = useRef(false);
 
   useEffect(() => {
     const tick = useRunStore.getState().tick;
@@ -56,12 +58,14 @@ export function Arena() {
 
       const fireHeld = fireHeldRef.current || current.fireHeld;
       const firePressed = firePressedQueueRef.current || current.firePressed;
-      setInput({ fireHeld, firePressed });
+      const swapPressed = swapPressedQueueRef.current || current.swapPressed;
+      setInput({ fireHeld, firePressed, swapPressed });
 
       tick(dt);
 
       firePressedQueueRef.current = false;
-      setInput({ firePressed: false, attack: false });
+      swapPressedQueueRef.current = false;
+      setInput({ firePressed: false, attack: false, swapPressed: false });
 
       render();
       rafRef.current = requestAnimationFrame(loop);
@@ -145,6 +149,11 @@ export function Arena() {
       if (FIRE_KEYS.has(e.key)) {
         if (!fireHeldRef.current) firePressedQueueRef.current = true;
         fireHeldRef.current = true;
+        e.preventDefault();
+        return;
+      }
+      if (SWAP_KEYS.has(e.key)) {
+        swapPressedQueueRef.current = true;
         e.preventDefault();
         return;
       }

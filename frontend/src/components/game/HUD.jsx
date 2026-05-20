@@ -24,6 +24,12 @@ export function HUD() {
               GAMBLE ×{gambleMult}
             </span>
           )}
+          <span
+            data-testid="hud-weapon"
+            className={`ml-2 rounded px-2 py-0.5 text-xs font-bold ${player.weaponMode === "melee" ? "bg-rose-500/30 text-rose-200" : "bg-emerald-500/20 text-emerald-200"}`}
+          >
+            {player.weaponMode === "melee" ? (player.weaponLocked ? "MELEE (no ammo)" : "MELEE") : "GUN"}
+          </span>
         </div>
         <Stat label="Time" value={`${mm}:${ss}`} accent={roundTimer < 10 ? "#ff6b6b" : "#e8edf3"} testId="hud-time" />
         <Stat label="Kills" value={kills} testId="hud-kills" />
@@ -33,7 +39,7 @@ export function HUD() {
         <Bar label="HP" value={player.hp} max={player.maxHp} color="#e85d3a" testId="hud-hp" />
         <Bar label="RIG" value={rig.hp} max={rig.maxHp} color="#c9a84c" testId="hud-rig" />
         <Bar
-          label={player.ammo <= 0 ? "MELEE" : "AMMO"}
+          label={player.weaponMode === "melee" ? "MELEE" : "AMMO"}
           value={player.ammo}
           max={player.maxAmmo}
           color={player.ammo <= 0 ? "#ff6b6b" : "#73ffb8"}

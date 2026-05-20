@@ -68,15 +68,25 @@ export function MobileControls() {
           }}
         />
       </div>
-      <button
-        data-testid="mobile-fire-btn"
-        className="pointer-events-auto h-28 w-28 rounded-full bg-red-500/70 text-lg font-bold text-white shadow-lg active:bg-red-600/80 select-none"
-        onTouchStart={(e) => { e.preventDefault(); setInput({ firePressed: true, fireHeld: true }); }}
-        onTouchEnd={(e) => { e.preventDefault(); setInput({ fireHeld: false }); }}
-        onTouchCancel={(e) => { e.preventDefault(); setInput({ fireHeld: false }); }}
-      >
-        FIRE
-      </button>
+      <div className="pointer-events-auto flex flex-col items-end gap-3">
+        <button
+          data-testid="mobile-swap-btn"
+          className="h-14 w-14 rounded-full bg-amber-500/70 text-xs font-bold text-black shadow-lg active:bg-amber-600/80 select-none"
+          onTouchStart={(e) => { e.preventDefault(); setInput({ swapPressed: true }); }}
+          onTouchEnd={(e) => e.preventDefault()}
+        >
+          SWAP
+        </button>
+        <button
+          data-testid="mobile-fire-btn"
+          className="h-28 w-28 rounded-full bg-red-500/70 text-lg font-bold text-white shadow-lg active:bg-red-600/80 select-none"
+          onTouchStart={(e) => { e.preventDefault(); setInput({ firePressed: true, fireHeld: true }); }}
+          onTouchEnd={(e) => { e.preventDefault(); setInput({ fireHeld: false }); }}
+          onTouchCancel={(e) => { e.preventDefault(); setInput({ fireHeld: false }); }}
+        >
+          FIRE
+        </button>
+      </div>
     </div>
   );
 }

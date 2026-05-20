@@ -25,7 +25,7 @@ export default function Title() {
         </Link>
       </div>
       <div className="mt-8 text-xs text-white/40">
-        WASD / arrows to move · Space to attack · Touch controls on mobile
+        WASD / arrows to move · Space to fire · Q to swap weapon · Touch controls on mobile
       </div>
     </div>
   );

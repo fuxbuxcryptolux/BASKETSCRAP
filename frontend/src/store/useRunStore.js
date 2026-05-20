@@ -41,6 +41,10 @@ function makePlayer(upgrades) {
     hpRegenAcc: 0,
     ammoRegenAcc: 0,
     hitRecentTimer: 0,
+    // [fix 1.4] explicit weapon mode + locked flag (locked when ammo == 0
+    // mid-wave; unlocks on wave clear refill).
+    weaponMode: "gun",
+    weaponLocked: false,
   };
 }
 
@@ -130,7 +134,7 @@ export const useRunStore = create((set, get) => ({
   spawnTimer: 0,
   spawnInterval: 1,
   passiveTimer: 0,
-  input: { moveX: 0, moveY: 0, firePressed: false, fireHeld: false, attack: false },
+  input: { moveX: 0, moveY: 0, firePressed: false, fireHeld: false, attack: false, swapPressed: false },
   endSummary: null,
 
   startRun: (upgrades) => {
@@ -153,7 +157,7 @@ export const useRunStore = create((set, get) => ({
       spawnTimer: 0,
       spawnInterval: interval,
       passiveTimer: 0,
-      input: { moveX: 0, moveY: 0, firePressed: false, fireHeld: false, attack: false },
+      input: { moveX: 0, moveY: 0, firePressed: false, fireHeld: false, attack: false, swapPressed: false },
       endSummary: null,
     });
   },
@@ -173,6 +177,11 @@ export const useRunStore = create((set, get) => ({
     const scaledInterval = Math.max(0.25, interval / Math.max(1, gambleMult * 0.85));
     const P = { ...get().player };
     P.ammo = Math.min(P.maxAmmo, P.ammo + BALANCE.player.ammoRefillOnWave);
+    // [fix 1.4] wave-clear unlocks weapon swap and resets to gun mode.
+    if (P.ammo > 0) {
+      P.weaponLocked = false;
+      P.weaponMode = "gun";
+    }
     set({
       phase: "spawning",
       wave: nextWave,
@@ -258,23 +267,31 @@ export const useRunStore = create((set, get) => ({
       }
     }
 
-    // ----- Gun firing -----
-    let aim = P.facing;
-    if (mag <= 0.001) {
-      const n = nearestEnemy(enemies, P.pos);
-      if (n) {
-        aim = Math.atan2(n.pos.y - P.pos.y, n.pos.x - P.pos.x);
-        // [fix 1.5] snap visual facing to aim while idle so muzzle indicator
-        // and sprite rotation match where bullets will actually go.
-        P.facing = aim;
-      }
+    // ----- Weapon mode [fix 1.4] -----
+    if (P.alive && P.ammo <= 0 && P.weaponMode === "gun") {
+      P.weaponMode = "melee";
+      P.weaponLocked = true;
+    }
+    if (P.alive && s.input.swapPressed && !P.weaponLocked) {
+      P.weaponMode = P.weaponMode === "gun" ? "melee" : "gun";
     }
 
-    const doMelee = () => {
+    // ----- Aim [fix 1.3] -----
+    // semi-auto tap: auto-aim assist when idle (kept).
+    // full-auto held-fire: MANUAL only (P.facing).
+    let semiAim = P.facing;
+    if (mag <= 0.001) {
+      const n = nearestEnemy(enemies, P.pos);
+      if (n) semiAim = Math.atan2(n.pos.y - P.pos.y, n.pos.x - P.pos.x);
+    }
+    const autoAim = P.facing;
+
+    const doMelee = (aim) => {
       if (!P.alive || P.meleeCooldown > 0) return;
       const dmg = BALANCE.melee.baseDamage + P.meleeBonus;
       const range = BALANCE.melee.range;
       const halfArc = (BALANCE.melee.arcDeg * Math.PI) / 360;
+      const kb = BALANCE.melee.knockback;
       for (const e of enemies) {
         if (e.hp <= 0) continue;
         const dx = e.pos.x - P.pos.x;
@@ -282,42 +299,46 @@ export const useRunStore = create((set, get) => ({
         const d = Math.hypot(dx, dy);
         if (d > range + e.radius) continue;
         const ang = Math.atan2(dy, dx);
-        let diff = Math.abs(((ang - aim + Math.PI) % (Math.PI * 2)) - Math.PI);
-        if (diff <= halfArc) e.hp -= computeDamage(dmg, e.defense);
+        const diff = Math.abs(((ang - aim + Math.PI) % (Math.PI * 2)) - Math.PI);
+        if (diff <= halfArc) {
+          e.hp -= computeDamage(dmg, e.defense);
+          e.pos.x += Math.cos(ang) * kb;
+          e.pos.y += Math.sin(ang) * kb;
+        }
       }
       P.meleeCooldown = BALANCE.melee.cooldown;
       P.facing = aim;
     };
 
-    if (P.alive && s.input.firePressed && P.fireCooldown <= 0) {
-      if (P.ammo >= BALANCE.gun.semi.ammoCost) {
-        const b = fireBullet(P, "semi", aim);
+    // ----- Firing -----
+    if (P.weaponMode === "melee") {
+      const meleeAim = mag <= 0.001 ? semiAim : P.facing;
+      if (P.alive && (s.input.firePressed || s.input.fireHeld) && P.meleeCooldown <= 0) {
+        doMelee(meleeAim);
+      }
+      P.holdTime = 0;
+    } else {
+      // Gun mode
+      if (P.alive && s.input.firePressed && P.fireCooldown <= 0 && P.ammo >= BALANCE.gun.semi.ammoCost) {
+        const b = fireBullet(P, "semi", semiAim);
         b.damage += P.weaponBonus;
         bullets.push(b);
         P.ammo -= BALANCE.gun.semi.ammoCost;
         P.fireCooldown = BALANCE.gun.semi.cooldown;
-        P.facing = aim;
-      } else {
-        doMelee();
+        P.facing = semiAim;
       }
-    }
-
-    if (s.input.fireHeld) {
-      P.holdTime += dt;
-      if (P.alive && P.holdTime >= BALANCE.gun.holdToAutoSec && P.fireCooldown <= 0) {
-        if (P.ammo >= BALANCE.gun.auto.ammoCost) {
-          const b = fireBullet(P, "auto", aim);
+      if (s.input.fireHeld) {
+        P.holdTime += dt;
+        if (P.alive && P.holdTime >= BALANCE.gun.holdToAutoSec && P.fireCooldown <= 0 && P.ammo >= BALANCE.gun.auto.ammoCost) {
+          const b = fireBullet(P, "auto", autoAim);
           b.damage += P.weaponBonus;
           bullets.push(b);
           P.ammo -= BALANCE.gun.auto.ammoCost;
           P.fireCooldown = BALANCE.gun.auto.cooldown;
-          P.facing = aim;
-        } else if (P.meleeCooldown <= 0) {
-          doMelee();
         }
+      } else {
+        P.holdTime = 0;
       }
-    } else {
-      P.holdTime = 0;
     }
 
     // ----- Bullet update + collisions -----
@@ -343,12 +364,39 @@ export const useRunStore = create((set, get) => ({
     bullets = liveBullets;
 
     // ----- Enemy AI + contact damage [fix 1.2: independent timers per target] -----
-    for (const e of enemies) {
-      const dx = R.pos.x - e.pos.x;
-      const dy = R.pos.y - e.pos.y;
-      const m = Math.hypot(dx, dy) || 1;
-      e.pos.x += (dx / m) * e.speed * dt;
-      e.pos.y += (dy / m) * e.speed * dt;
+    // First pass: compute desired velocity (seek rig + separation [fix 1.7]).
+    const SEP_PAD = 4;
+    for (let i = 0; i < enemies.length; i++) {
+      const e = enemies[i];
+      // seek toward rig
+      let vx = R.pos.x - e.pos.x;
+      let vy = R.pos.y - e.pos.y;
+      const mSeek = Math.hypot(vx, vy) || 1;
+      vx /= mSeek; vy /= mSeek;
+      // separation from other enemies
+      let sx = 0, sy = 0;
+      for (let j = 0; j < enemies.length; j++) {
+        if (j === i) continue;
+        const o = enemies[j];
+        const dx = e.pos.x - o.pos.x;
+        const dy = e.pos.y - o.pos.y;
+        const d = Math.hypot(dx, dy);
+        const minD = e.radius + o.radius + SEP_PAD;
+        if (d > 0 && d < minD) {
+          const push = (minD - d) / minD; // 0..1
+          sx += (dx / d) * push;
+          sy += (dy / d) * push;
+        }
+      }
+      // blend (separation weighted higher when close)
+      const sMag = Math.hypot(sx, sy);
+      const SEP_WEIGHT = 1.4;
+      let dx = vx + sx * SEP_WEIGHT;
+      let dy = vy + sy * SEP_WEIGHT;
+      const norm = Math.hypot(dx, dy) || 1;
+      dx /= norm; dy /= norm;
+      e.pos.x += dx * e.speed * dt;
+      e.pos.y += dy * e.speed * dt;
       e.rigContactTimer = Math.max(0, e.rigContactTimer - dt);
       e.playerContactTimer = Math.max(0, e.playerContactTimer - dt);
 
@@ -363,6 +411,24 @@ export const useRunStore = create((set, get) => ({
         P.invulnTimer = BALANCE.player.invulnAfterHit;
         P.hitRecentTimer = BALANCE.regen.delayAfterHitSec;
         e.playerContactTimer = e.contactInterval;
+      }
+      // soft enemy-enemy non-overlap (resolve any remaining overlap so they
+      // visibly stand apart rather than stacking on the same pixel).
+      for (let j = i + 1; j < enemies.length; j++) {
+        const o = enemies[j];
+        const ox = o.pos.x - e.pos.x;
+        const oy = o.pos.y - e.pos.y;
+        const od = Math.hypot(ox, oy);
+        const minD = e.radius + o.radius;
+        if (od > 0 && od < minD) {
+          const overlap = (minD - od) / 2;
+          const nx = ox / od;
+          const ny = oy / od;
+          e.pos.x -= nx * overlap;
+          e.pos.y -= ny * overlap;
+          o.pos.x += nx * overlap;
+          o.pos.y += ny * overlap;
+        }
       }
     }
 
@@ -390,8 +456,9 @@ export const useRunStore = create((set, get) => ({
 
     let passiveTimer = s.passiveTimer + dt;
     if (R.hp > 0) {
+      const passiveRate = BALANCE.rig.passiveScrapPerSec(s.wave);
       while (passiveTimer >= 1) {
-        unsecured += Math.round(BALANCE.rig.passiveScrapPerSec * rewardMult);
+        unsecured += Math.round(passiveRate * rewardMult);
         passiveTimer -= 1;
       }
     }
@@ -408,7 +475,9 @@ export const useRunStore = create((set, get) => ({
           P.hpRegenAcc -= add;
         }
       }
-      if (P.ammo < P.maxAmmo) {
+      // [fix 1.4b] ammo regen only ticks while ammo > 0 — no resurrection
+      // from 0; once dry, you must clear the wave to refill (and unlock).
+      if (P.ammo > 0 && P.ammo < P.maxAmmo) {
         P.ammoRegenAcc += ammoRate * dt;
         if (P.ammoRegenAcc >= 1) {
           const add = Math.floor(P.ammoRegenAcc);
