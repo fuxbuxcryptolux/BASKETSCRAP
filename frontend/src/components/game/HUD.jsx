@@ -30,6 +30,13 @@ export function HUD() {
           >
             {player.weaponMode === "melee" ? (player.weaponLocked ? "MELEE (no ammo)" : "MELEE") : "GUN"}
           </span>
+          <span
+            data-testid="hud-dash"
+            className={`ml-2 rounded px-2 py-0.5 text-xs font-bold ${player.dashCooldown <= 0 ? "bg-sky-500/30 text-sky-200" : "bg-white/10 text-white/40"}`}
+            title="Dash (Shift / E)"
+          >
+            {player.dashCooldown <= 0 ? "DASH" : `DASH ${player.dashCooldown.toFixed(1)}s`}
+          </span>
         </div>
         <Stat label="Time" value={`${mm}:${ss}`} accent={roundTimer < 10 ? "#ff6b6b" : "#e8edf3"} testId="hud-time" />
         <Stat label="Kills" value={kills} testId="hud-kills" />

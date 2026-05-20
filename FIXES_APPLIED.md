@@ -1,52 +1,52 @@
 # Last Scrap — Fixes Applied (running log)
 
-## Round 1 — Wave-1 critical (May 20)
-- 1.1 Round-timer ends wave in any phase
-- 1.2 Independent enemy contact timers (rig vs player)
-- 1.5 Facing snaps to aim while idle
-- 1.6 Player ↔ rig collision
-- 2.1 Save sanitisation
-
-## Round 2 — Tuning (May 20)
-- 1.7 Enemy separation
-- 1.9 Wave-1 tightened (6 shamblers @ 1.0s)
-- 2.2 Wave-1 economy rebalanced (passive `0.4 + 0.4×wave`/s, bonus `10 + 8×wave`)
-
-## Round 3 — Auto-aim + Melee (May 20)
-- 1.3c Auto-aim limited to semi-tap
-- 1.4b Ammo regen no resurrection from 0
-- 1.4c Melee buffed + deliberate Q-key weapon swap
+## Round 1-3 (May 20) — see prior entries
+Wave-1 critical fixes, tuning batch, auto-aim + melee swap
 
 ## Round 4 — Playtest feedback (May 20)
+Full-auto auto-aim w/ spread, movement inertia + speed 240→280, zombie sprite-flip via motion direction
 
-| Issue (your words) | Fix |
-|---|---|
-| "auto aim needs to be a little more accurate … I was shooting nothing while the rig got destroyed" | **Full-auto held-fire now also auto-aims at nearest enemy when idle** — Round 3 had nerfed full-auto to manual-only, which left you firing at stale facing directions. Brought auto-aim back for held-fire, but added bullet **spread (~9° cone)** to full-auto so spray-and-pray isn't pixel-perfect. Semi-tap stays accurate. Net: no more wasted ammo into thin air, but full-auto isn't a god-mode either. Player facing now snaps to target when idle so the muzzle line points where bullets go. |
-| "movement speed needs to be adjusted, doesn't feel natural" | **Added inertia + speed bump.** Base speed 240 → **280** px/s. Player now has a velocity that lerps toward target at `accel = 14`/sec (~0.15s to top speed, ~0.15s to stop). No more teleport-style snap — feels like real legs. |
-| "zombies walking backwards looking dumb" | **Sprite flip now tracks actual horizontal movement.** Each enemy carries `facingSign` updated every frame from `pos.x - prevX` (with a small deadzone to avoid jitter). When a zombie moves left, the sprite shows its left-facing default; when it moves right, it mirrors. With separation steering pushing zombies sideways sometimes, the old "flip based on which side of rig" rule was actively wrong. |
+## Round 5 — Speed nerf + Dash (May 20)
 
-## Files touched this round
-- `src/game/data/balance.js` — speed, accel, auto.spreadRad
-- `src/store/useRunStore.js` — player velocity smoothing, full-auto auto-aim + spread, enemy facingSign tracking
-- `src/components/game/Arena.jsx` — sprite flip uses facingSign instead of position-vs-rig
+**Movement speed:** 280 → **200** per playtest feedback. Still has the inertia smoothing from Round 4.
+
+**Dash mechanic:**
+- Keyboard: **Shift** or **E**
+- Mobile: new **DASH** button (sky-blue) above FIRE
+- Behavior: ~0.15s burst at **760 px/s** in input direction (or facing direction if standing still)
+- **0.22s of invulnerability** during the dash window — actual escape tool, not just a re-position
+- **0.9s cooldown**, surfaced in HUD as `DASH` (ready) → `DASH 0.6s` (cooling)
+- Visual: cyan glow + shadow on the hero sprite during the dash frames
+
+All numbers are in `balance.js → player.{dashSpeed, dashDuration, dashCooldown, dashInvuln}` if you want to nudge them after playtesting.
+
+**Assets received & saved (not yet wired in):**
+- `/app/frontend/src/assets/game/new/rig_new.jpeg` — your new ring-shaped rig graphic
+- `/app/frontend/src/assets/game/new/ui_template.png` — UI/HUD style template for the future visual pass
+
+I held off on swapping these in per your original instruction to defer all visual work until mechanics lock. **Tell me if you want the rig graphic swapped in now** — it's a 1-line render change that doesn't touch any gameplay.
 
 ## Smoke-tested
-- Title → Loadout → Run renders ✅
-- HUD shows GUN at start ✅
-- Zombies visibly moving toward rig with sprite flipped per motion direction ✅
-- Lint clean ✅
+- DASH HUD badge cycles ready → 0.6s → ready ✅
+- Player visibly bursts forward when Shift is pressed mid-movement ✅
+- Lint clean across all touched files ✅
 
-## Remaining in audit / backlog
+## Tuning knobs (`balance.js`)
+| Knob | Current | Effect |
+|---|---|---|
+| `player.baseSpeed` | 200 | normal move speed |
+| `player.accel` | 14 | inertia ramp (higher = snappier) |
+| `player.dashSpeed` | 760 | dash burst velocity |
+| `player.dashDuration` | 0.15 | how long the burst lasts |
+| `player.dashCooldown` | 0.9 | sec between dashes |
+| `player.dashInvuln` | 0.22 | i-frames per dash |
+| `gun.auto.spreadRad` | 0.16 | full-auto cone width |
+| `melee.knockback` | 32 | px enemies get pushed |
+
+## Audit backlog still pending
 - 1.8 Bullet pierce (design call)
-- 2.3 Multiplier stacking, 2.4 Gamble math, 2.5 Regen toning
-- 3.1 Surrender button placement, 3.2 Pause/Esc, 3.4 Weapon-swap feedback
-- Debug overlay (live DPS / hits / scrap/sec) — recommended next
-- **A** Code refactor (`tick()` + `Arena.jsx`) — queued post-balance lock
-- Visual overhaul — queued post-mechanics lock
-
-## Things I might have gotten wrong
-**Zombie facing direction** — I'm guessing the source sprite's default direction (left vs right). If after this fix they're still facing backwards, the fix is *one line*: flip the comparison in `Arena.jsx` from `(e.facingSign ?? 1) > 0 ? -1 : 1` to `< 0 ? -1 : 1`. Tell me and I'll flip it.
-
-**Inertia feel** — `accel = 14` is my best guess for "natural." If it feels too floaty/slidey, bump it up (less inertia → snappier). If too stiff, bump it down. The variable is in `balance.js → player.accel`.
-
-**Full-auto spread** — `spreadRad = 0.16` (~9° cone). At close range you'll still hit; at long range you'll miss more. If you want tighter spray, lower the number; if you want it even less god-mode, raise it.
+- 2.3 / 2.4 / 2.5 Multiplier + regen tuning
+- 3.1 Surrender btn placement, 3.2 Pause menu, 3.4 Weapon-swap feedback
+- Debug overlay (live stats) — still on offer
+- **A** Code refactor — queued post-balance lock
+- Visual overhaul — queued post-mechanics lock (assets now in place when we get there)

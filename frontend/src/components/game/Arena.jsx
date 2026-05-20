@@ -26,6 +26,7 @@ const MOVE_KEYS = {
 };
 const FIRE_KEYS = new Set([" ", "Space", "j", "J"]);
 const SWAP_KEYS = new Set(["q", "Q"]);
+const DASH_KEYS = new Set(["Shift", "e", "E"]);
 
 export function Arena() {
   const canvasRef = useRef(null);
@@ -35,6 +36,7 @@ export function Arena() {
   const fireHeldRef = useRef(false);
   const firePressedQueueRef = useRef(false);
   const swapPressedQueueRef = useRef(false);
+  const dashPressedQueueRef = useRef(false);
 
   useEffect(() => {
     const tick = useRunStore.getState().tick;
@@ -59,13 +61,15 @@ export function Arena() {
       const fireHeld = fireHeldRef.current || current.fireHeld;
       const firePressed = firePressedQueueRef.current || current.firePressed;
       const swapPressed = swapPressedQueueRef.current || current.swapPressed;
-      setInput({ fireHeld, firePressed, swapPressed });
+      const dashPressed = dashPressedQueueRef.current || current.dashPressed;
+      setInput({ fireHeld, firePressed, swapPressed, dashPressed });
 
       tick(dt);
 
       firePressedQueueRef.current = false;
       swapPressedQueueRef.current = false;
-      setInput({ firePressed: false, attack: false, swapPressed: false });
+      dashPressedQueueRef.current = false;
+      setInput({ firePressed: false, attack: false, swapPressed: false, dashPressed: false });
 
       render();
       rafRef.current = requestAnimationFrame(loop);
@@ -132,7 +136,13 @@ export function Arena() {
         ctx.save();
         ctx.translate(P.pos.x, P.pos.y);
         ctx.rotate(P.facing - Math.PI / 2);
-        if (P.invulnTimer > 0) ctx.globalAlpha = 0.6;
+        if (P.dashTimer > 0) {
+          // Dash visual: bright trail/glow and slight scale punch.
+          ctx.globalAlpha = 0.9;
+          ctx.shadowColor = "#7ad8ff";
+          ctx.shadowBlur = 18;
+        }
+        if (P.invulnTimer > 0 && P.dashTimer <= 0) ctx.globalAlpha = 0.6;
         if (!P.alive) ctx.globalAlpha = 0.3;
         ctx.drawImage(IMG.hero, -pSize / 2, -pSize / 2, pSize, pSize);
         ctx.restore();
@@ -156,6 +166,11 @@ export function Arena() {
       }
       if (SWAP_KEYS.has(e.key)) {
         swapPressedQueueRef.current = true;
+        e.preventDefault();
+        return;
+      }
+      if (DASH_KEYS.has(e.key)) {
+        dashPressedQueueRef.current = true;
         e.preventDefault();
         return;
       }

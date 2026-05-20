@@ -27,6 +27,9 @@ function makePlayer(upgrades) {
     defense: BALANCE.player.baseDefense + 2 * defLvl,
     speed: BALANCE.player.baseSpeed + 20 * spdLvl,
     velX: 0, velY: 0,                       // [playtest fix] inertia
+    dashCooldown: 0,                        // [feature dash]
+    dashTimer: 0,
+    dashDirX: 0, dashDirY: 0,
     attackCooldown: 0,
     invulnTimer: 0,
     facing: 0,
@@ -136,7 +139,7 @@ export const useRunStore = create((set, get) => ({
   spawnTimer: 0,
   spawnInterval: 1,
   passiveTimer: 0,
-  input: { moveX: 0, moveY: 0, firePressed: false, fireHeld: false, attack: false, swapPressed: false },
+  input: { moveX: 0, moveY: 0, firePressed: false, fireHeld: false, attack: false, swapPressed: false, dashPressed: false },
   endSummary: null,
 
   startRun: (upgrades) => {
@@ -159,7 +162,7 @@ export const useRunStore = create((set, get) => ({
       spawnTimer: 0,
       spawnInterval: interval,
       passiveTimer: 0,
-      input: { moveX: 0, moveY: 0, firePressed: false, fireHeld: false, attack: false, swapPressed: false },
+      input: { moveX: 0, moveY: 0, firePressed: false, fireHeld: false, attack: false, swapPressed: false, dashPressed: false },
       endSummary: null,
     });
   },
@@ -238,20 +241,48 @@ export const useRunStore = create((set, get) => ({
     const ix = s.input.moveX;
     const iy = s.input.moveY;
     const mag = Math.hypot(ix, iy);
+
+    // Cooldowns / timers tick down each frame.
+    P.dashCooldown = Math.max(0, P.dashCooldown - dt);
+    P.dashTimer = Math.max(0, P.dashTimer - dt);
+
+    // [feature dash] trigger on edge if off cooldown.
+    if (P.alive && s.input.dashPressed && P.dashCooldown <= 0 && P.dashTimer <= 0) {
+      let dirX = 0, dirY = 0;
+      if (mag > 0.001) {
+        dirX = ix / mag; dirY = iy / mag;
+      } else {
+        dirX = Math.cos(P.facing); dirY = Math.sin(P.facing);
+      }
+      P.dashDirX = dirX;
+      P.dashDirY = dirY;
+      P.dashTimer = BALANCE.player.dashDuration;
+      P.dashCooldown = BALANCE.player.dashCooldown;
+      P.invulnTimer = Math.max(P.invulnTimer, BALANCE.player.dashInvuln);
+      P.facing = Math.atan2(dirY, dirX);
+    }
+
     let targetVx = 0;
     let targetVy = 0;
-    if (mag > 0.001 && P.alive) {
-      const nx = ix / mag;
-      const ny = iy / mag;
-      targetVx = nx * P.speed;
-      targetVy = ny * P.speed;
-      P.facing = Math.atan2(ny, nx);
+    if (P.dashTimer > 0) {
+      // dash overrides input: full dash speed in dash direction
+      targetVx = P.dashDirX * BALANCE.player.dashSpeed;
+      targetVy = P.dashDirY * BALANCE.player.dashSpeed;
+      P.velX = targetVx;
+      P.velY = targetVy;
+    } else {
+      if (mag > 0.001 && P.alive) {
+        const nx = ix / mag;
+        const ny = iy / mag;
+        targetVx = nx * P.speed;
+        targetVy = ny * P.speed;
+        P.facing = Math.atan2(ny, nx);
+      }
+      // Lerp current velocity toward target. accel=14 → ~0.15s ramp-up/coast-down.
+      const accelStep = Math.min(1, BALANCE.player.accel * dt);
+      P.velX += (targetVx - P.velX) * accelStep;
+      P.velY += (targetVy - P.velY) * accelStep;
     }
-    // Lerp current velocity toward target. accel=14 → ~0.15s to full speed,
-    // ~0.15s to stop. Feels like real legs instead of a teleport.
-    const accelStep = Math.min(1, BALANCE.player.accel * dt);
-    P.velX += (targetVx - P.velX) * accelStep;
-    P.velY += (targetVy - P.velY) * accelStep;
     P.pos.x += P.velX * dt;
     P.pos.y += P.velY * dt;
     P.pos.x = Math.max(16, Math.min(BALANCE.arena.width - 16, P.pos.x));

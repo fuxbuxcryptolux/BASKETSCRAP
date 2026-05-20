@@ -71,11 +71,19 @@ export function MobileControls() {
       <div className="pointer-events-auto flex flex-col items-end gap-3">
         <button
           data-testid="mobile-swap-btn"
-          className="h-14 w-14 rounded-full bg-amber-500/70 text-xs font-bold text-black shadow-lg active:bg-amber-600/80 select-none"
+          className="h-12 w-12 rounded-full bg-amber-500/70 text-[10px] font-bold text-black shadow-lg active:bg-amber-600/80 select-none"
           onTouchStart={(e) => { e.preventDefault(); setInput({ swapPressed: true }); }}
           onTouchEnd={(e) => e.preventDefault()}
         >
           SWAP
+        </button>
+        <button
+          data-testid="mobile-dash-btn"
+          className="h-14 w-14 rounded-full bg-sky-500/70 text-xs font-bold text-white shadow-lg active:bg-sky-600/80 select-none"
+          onTouchStart={(e) => { e.preventDefault(); setInput({ dashPressed: true }); }}
+          onTouchEnd={(e) => e.preventDefault()}
+        >
+          DASH
         </button>
         <button
           data-testid="mobile-fire-btn"

@@ -5,7 +5,7 @@ export const BALANCE = {
     baseMaxHp: 100,
     baseAttack: 20,
     baseDefense: 2,
-    baseSpeed: 280, // px/sec  [playtest fix: 240 -> 280 + inertia]
+    baseSpeed: 200, // px/sec  [playtest fix: 280 -> 200 per user feedback]
     accel: 14,      // [playtest fix] velocity lerp rate per sec; gives natural feel
     attackRange: 70,
     attackArcDeg: 110,
@@ -14,6 +14,11 @@ export const BALANCE = {
     invulnAfterHit: 0.25,
     maxAmmo: 60,
     ammoRefillOnWave: 30,
+    // [feature: dash] short directional burst with i-frames and cooldown.
+    dashSpeed: 760,
+    dashDuration: 0.15,
+    dashCooldown: 0.9,
+    dashInvuln: 0.22,
   },
   regen: {
     hpPerSec: 1.5,
