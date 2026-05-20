@@ -1,0 +1,36 @@
+const CAUSE_LABEL = {
+  cashout: "Cashed Out",
+  overrun: "Rig Overrun",
+  death: "You Died",
+  surrender: "Surrendered",
+};
+
+export function SummaryScreen({ summary, onHome, onUpgrades, onAgain }) {
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/85 p-4" data-testid="summary-screen">
+      <div className="w-full max-w-sm rounded-lg border border-white/20 bg-stone-900 p-6 text-white shadow-2xl">
+        <h2 className="text-2xl font-bold" data-testid="summary-cause">{CAUSE_LABEL[summary.cause]}</h2>
+        <p className="mt-1 text-sm text-white/60">Reached Wave {summary.waveReached}</p>
+        {summary.gambleBusted && (
+          <p className="mt-2 rounded bg-rose-500/20 px-2 py-1 text-xs font-semibold text-rose-200">
+            Gamble ×{summary.gambleMult} busted — scrap penalty applied.
+          </p>
+        )}
+        <div className="mt-4 grid grid-cols-2 gap-2 rounded bg-black/40 p-3 text-sm">
+          <div>Unsecured before</div><div className="text-right font-mono">{summary.unsecuredBefore}</div>
+          <div className="text-emerald-300">Banked</div><div className="text-right font-mono text-emerald-300" data-testid="summary-banked">+{summary.banked}</div>
+          <div className="text-red-300">Lost</div><div className="text-right font-mono text-red-300">-{summary.lost}</div>
+          <div className="col-span-2 mt-1 border-t border-white/10 pt-2 flex justify-between">
+            <span>Secured total</span>
+            <span className="font-mono font-bold text-amber-300" data-testid="summary-secured-total">{summary.securedAfter}</span>
+          </div>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button data-testid="summary-run-again-btn" className="rounded bg-amber-500 px-4 py-2 font-semibold text-black hover:bg-amber-400" onClick={onAgain}>Run Again</button>
+          <button data-testid="summary-upgrades-btn" className="rounded border border-white/30 px-4 py-2 font-semibold hover:bg-white/10" onClick={onUpgrades}>Upgrades</button>
+          <button data-testid="summary-home-btn" className="col-span-2 rounded border border-white/30 px-4 py-2 font-semibold hover:bg-white/10" onClick={onHome}>Home</button>
+        </div>
+      </div>
+    </div>
+  );
+}
