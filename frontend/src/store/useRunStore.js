@@ -80,7 +80,8 @@ function spawnEnemy(kind) {
     hp: def.maxHp, maxHp: def.maxHp,
     attack: def.attack, defense: def.defense, speed: def.speed,
     radius: def.radius, aggroRadius: def.aggroRadius,
-    contactInterval: def.contactDamageInterval, contactTimer: 0,
+    contactInterval: def.contactDamageInterval,
+    rigContactTimer: 0, playerContactTimer: 0,
     scrapReward: def.scrapReward, color: def.color,
   };
 }
@@ -241,11 +242,32 @@ export const useRunStore = create((set, get) => ({
     P.meleeCooldown = Math.max(0, P.meleeCooldown - dt);
     P.hitRecentTimer = Math.max(0, P.hitRecentTimer - dt);
 
+    // ----- Rig collision (push player out of rig body) [fix 1.6] -----
+    {
+      const dx = P.pos.x - R.pos.x;
+      const dy = P.pos.y - R.pos.y;
+      const d = Math.hypot(dx, dy);
+      const minDist = BALANCE.arena.rigRadius + BALANCE.player.radius;
+      if (d < minDist) {
+        if (d < 0.001) {
+          P.pos.x = R.pos.x + minDist;
+        } else {
+          P.pos.x = R.pos.x + (dx / d) * minDist;
+          P.pos.y = R.pos.y + (dy / d) * minDist;
+        }
+      }
+    }
+
     // ----- Gun firing -----
     let aim = P.facing;
     if (mag <= 0.001) {
       const n = nearestEnemy(enemies, P.pos);
-      if (n) aim = Math.atan2(n.pos.y - P.pos.y, n.pos.x - P.pos.x);
+      if (n) {
+        aim = Math.atan2(n.pos.y - P.pos.y, n.pos.x - P.pos.x);
+        // [fix 1.5] snap visual facing to aim while idle so muzzle indicator
+        // and sprite rotation match where bullets will actually go.
+        P.facing = aim;
+      }
     }
 
     const doMelee = () => {
@@ -320,26 +342,27 @@ export const useRunStore = create((set, get) => ({
     }
     bullets = liveBullets;
 
-    // ----- Enemy AI + contact damage -----
+    // ----- Enemy AI + contact damage [fix 1.2: independent timers per target] -----
     for (const e of enemies) {
       const dx = R.pos.x - e.pos.x;
       const dy = R.pos.y - e.pos.y;
       const m = Math.hypot(dx, dy) || 1;
       e.pos.x += (dx / m) * e.speed * dt;
       e.pos.y += (dy / m) * e.speed * dt;
-      e.contactTimer = Math.max(0, e.contactTimer - dt);
+      e.rigContactTimer = Math.max(0, e.rigContactTimer - dt);
+      e.playerContactTimer = Math.max(0, e.playerContactTimer - dt);
 
       const dRig = dist(e.pos, R.pos);
-      if (dRig <= e.radius + BALANCE.arena.rigRadius && e.contactTimer <= 0) {
+      if (dRig <= e.radius + BALANCE.arena.rigRadius && e.rigContactTimer <= 0) {
         R.hp -= computeDamage(e.attack, 0);
-        e.contactTimer = e.contactInterval;
+        e.rigContactTimer = e.contactInterval;
       }
       const dPl = dist(e.pos, P.pos);
-      if (P.alive && dPl <= e.radius + 16 && e.contactTimer <= 0 && P.invulnTimer <= 0) {
+      if (P.alive && dPl <= e.radius + BALANCE.player.radius && e.playerContactTimer <= 0 && P.invulnTimer <= 0) {
         P.hp -= computeDamage(e.attack, P.defense);
         P.invulnTimer = BALANCE.player.invulnAfterHit;
         P.hitRecentTimer = BALANCE.regen.delayAfterHitSec;
-        e.contactTimer = e.contactInterval;
+        e.playerContactTimer = e.contactInterval;
       }
     }
 
@@ -426,10 +449,15 @@ export const useRunStore = create((set, get) => ({
     }
 
     let phase = s.phase;
-    const allCleared = enemies.length === 0 && spawnQueue.length === 0;
     const timeout = roundTimer <= 0;
+    // [fix 1.1] On timeout, abort any pending spawns and remove enemies still
+    // off-arena so the wave actually ends instead of stalling in `spawning`.
+    if (timeout) {
+      spawnQueue = [];
+    }
+    const allCleared = enemies.length === 0 && spawnQueue.length === 0;
     if (phase === "spawning" && spawnQueue.length === 0) phase = "fighting";
-    if (phase === "fighting" && (allCleared || timeout)) {
+    if ((phase === "spawning" || phase === "fighting") && (allCleared || timeout)) {
       const bonus = BALANCE.waveClearBonus(s.wave);
       unsecured += Math.round(bonus * rewardMult);
       phase = "cashout";

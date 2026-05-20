@@ -2,59 +2,57 @@
 
 ## Original problem statement
 Audit source repo (https://github.com/buzzfuzzbee333-svg/last-scrap) and rebuild the
-Last Scrap game in this workspace (React + FastAPI + MongoDB). Then deliver a status
-report with bugs. Visual overhaul comes AFTER mechanics are stable.
+Last Scrap game in this workspace (React + FastAPI + MongoDB). Visual overhaul AFTER
+mechanics + bugs are stable.
 
-## Stack (this build)
+## Stack
 - Frontend: React 19 (CRA + craco), react-router-dom v7, Zustand, Tailwind v3, Canvas 2D
-- Backend: FastAPI (passthrough — game runs entirely client-side for v1)
-- Persistence: localStorage (`lastscrap.meta.v1`)
-- Assets: original PNGs copied from source repo (hero / brute / shambler / arena)
+- Backend: FastAPI (idle in v1 — game is fully client-side)
+- Persistence: localStorage (`lastscrap.meta.v1`) with sanitisation on read/import
 
-## File map (game-specific)
-```
-frontend/src/
-  game/
-    combat.js         damage formula
-    resolver.js       run-end payout (cashout/overrun/death/surrender)
-    persistence.js    localStorage load/save + download/import
-    data/
-      balance.js      all tuning constants (arena, player, gun, regen, gamble…)
-      enemies.js      Shambler + Brute active, Runner defined but disabled
-      waves.js        5 scripted waves + procedural after
-      upgrades.js     10 upgrades w/ cost curves
-  store/
-    useMetaStore.js   secured scrap + upgrade levels (persisted)
-    useRunStore.js    in-run state + tick() engine
-  components/game/
-    Arena.jsx         canvas + keyboard input + render loop
-    HUD.jsx           wave, time, kills, HP/RIG/AMMO bars
-    MobileControls.jsx joystick + fire button
-    CashoutModal.jsx  Cash Out / Next Wave / Gamble
-    SummaryScreen.jsx run-end banked / lost / total
-    DebugPanel.jsx    backtick to toggle, dev shortcuts
-  pages/
-    Title.jsx, Play.jsx, Run.jsx, Upgrades.jsx
-```
-
-## What's implemented (May 19, 2026)
+## What's implemented (May 20, 2026)
 - Full v1 loop: Title → Loadout → Arena (waves + cashout) → Summary → Upgrades
-- Combat: gun (semi-auto on tap, full-auto on hold), melee fallback when ammo dry
-- Enemies: contact-damage AI, walk straight to rig, brush past player
-- 60s wave timer, wave-clear scrap bonus, passive rig scrap trickle
-- Gamble ×2/×3/×5 next-wave option with proportional penalty on fail
-- HP + ammo regen with hit-pause, scaled by gamble multiplier
-- Persistent secured scrap + upgrades via localStorage
-- Save export/import (JSON)
-- Debug panel (` key) for testing
+- Combat: gun (semi/auto with hold-to-auto), melee fallback when ammo dry
+- Enemies: contact-damage AI walking to rig
+- 60s wave timer, wave-clear bonus, passive rig scrap trickle
+- Gamble ×2/×3/×5 with proportional penalty
+- HP + ammo regen with hit-pause
+- Persistent secured scrap + upgrades, with download/import save
+- Debug panel (` key)
 - Mobile joystick + fire button
 
-## Backlog (P0 - blockers identified in audit)
-- See `/app/AUDIT_REPORT.md`
+## Bug-fix log
 
-## Backlog (P1 - polish/UX after mechanics stable)
-- Visual overhaul (UI, menus, sprites, arena art) — explicitly deferred by user
-- Optional backend leaderboard / cloud save
+### May 20, 2026 — Wave-1 gameplay fixes
+- 1.1 Round-timer ends wave in any phase
+- 1.2 Independent enemy contact timers (rig vs player)
+- 1.5 Facing snaps to aim while idle
+- 1.6 Player ↔ rig collision
+- 2.1 Save import + load validation (clamps scrap, filters upgrade IDs, caps levels)
+
+## Backlog (P0 — gameplay)
+- 1.3 Auto-aim god mode (design call: remove? penalty?)
+- 1.4 Melee path dead code (design call: how should melee feel?)
+- 1.7 Enemy separation steering
+- 1.8 Bullet pierce
+- 1.9 Wave-1 difficulty curve
+- 2.2 Wave-1 economy
+- 2.3 / 2.4 / 2.5 Multiplier stacking & regen tuning
+
+## Backlog (P1 — UX)
+- 3.1 Move surrender button off mobile fire-button area
+- 3.2 Pause / Esc menu
+- 3.4 Melee swap feedback
+- 3.5 Cashout preview
+
+## Backlog (P2 — code health)
+- Split `useRunStore.tick()` into sub-functions
+- Split `Arena.jsx` into render / loop / input hooks
+- Fixed-timestep accumulator
+- Deterministic RNG seed (enables daily challenge mode)
+
+## Backlog (P3 — visual)
+- Full UI/menu/sprite/arena overhaul (explicitly queued AFTER mechanics lock)
 
 ## Test credentials
 N/A — no auth in v1.
