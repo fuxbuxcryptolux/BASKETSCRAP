@@ -123,24 +123,25 @@ export function Arena() {
       ctx.imageSmoothingEnabled = false;
       for (const e of s.enemies) {
         const img = e.kind === "brute" ? IMG.brute : IMG.shambler;
-        const size = e.radius * 2.4;
         if (img.complete && img.naturalWidth > 0) {
-          // [playtest fix] sprite faces direction of travel, tracked in store.
-          // Source PNGs face LEFT by default → flip when moving right.
-          const flip = (e.facingSign ?? 1) > 0 ? -1 : 1;
+          // [visual] sprites face RIGHT by default → mirror when moving left.
+          const flip = (e.facingSign ?? 1) < 0 ? -1 : 1;
+          // preserve aspect ratio; scale height to enemy radius * 2.6
+          const targetH = e.radius * 2.6;
+          const targetW = (img.naturalWidth / img.naturalHeight) * targetH;
           ctx.save();
           ctx.translate(e.pos.x, e.pos.y);
           ctx.scale(flip, 1);
-          ctx.drawImage(img, -size / 2, -size / 2, size, size);
+          ctx.drawImage(img, -targetW / 2, -targetH / 2, targetW, targetH);
           ctx.restore();
         } else {
           ctx.fillStyle = e.color;
           ctx.beginPath(); ctx.arc(e.pos.x, e.pos.y, e.radius, 0, Math.PI * 2); ctx.fill();
         }
-        const w = e.radius * 2;
+        const barW = e.radius * 2;
         const pct = e.hp / e.maxHp;
-        ctx.fillStyle = "#000"; ctx.fillRect(e.pos.x - w / 2, e.pos.y - e.radius - 10, w, 3);
-        ctx.fillStyle = "#73ffb8"; ctx.fillRect(e.pos.x - w / 2, e.pos.y - e.radius - 10, w * pct, 3);
+        ctx.fillStyle = "#000"; ctx.fillRect(e.pos.x - barW / 2, e.pos.y - e.radius - 10, barW, 3);
+        ctx.fillStyle = "#73ffb8"; ctx.fillRect(e.pos.x - barW / 2, e.pos.y - e.radius - 10, barW * pct, 3);
       }
 
       for (const b of s.bullets) {
@@ -149,20 +150,22 @@ export function Arena() {
       }
 
       const P = s.player;
-      const pSize = 44;
+      // [visual] hero sprite now faces UP by default → rotate by facing + PI/2.
       if (IMG.hero.complete && IMG.hero.naturalWidth > 0) {
+        const targetH = 56;
+        const targetW = (IMG.hero.naturalWidth / IMG.hero.naturalHeight) * targetH;
         ctx.save();
         ctx.translate(P.pos.x, P.pos.y);
-        ctx.rotate(P.facing - Math.PI / 2);
+        ctx.rotate(P.facing + Math.PI / 2);
         if (P.dashTimer > 0) {
-          // Dash visual: bright trail/glow and slight scale punch.
+          // Dash visual: bright trail/glow.
           ctx.globalAlpha = 0.9;
           ctx.shadowColor = "#7ad8ff";
           ctx.shadowBlur = 18;
         }
         if (P.invulnTimer > 0 && P.dashTimer <= 0) ctx.globalAlpha = 0.6;
         if (!P.alive) ctx.globalAlpha = 0.3;
-        ctx.drawImage(IMG.hero, -pSize / 2, -pSize / 2, pSize, pSize);
+        ctx.drawImage(IMG.hero, -targetW / 2, -targetH / 2, targetW, targetH);
         ctx.restore();
       } else {
         ctx.fillStyle = P.alive ? "#e8edf3" : "#555";

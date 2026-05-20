@@ -1,5 +1,8 @@
 import { useRunStore } from "../../store/useRunStore";
 
+const FONT_PIXEL = { fontFamily: "'VT323', monospace" };
+const FONT_HEAD = { fontFamily: "'Press Start 2P', monospace" };
+
 export function HUD() {
   const player = useRunStore((s) => s.player);
   const rig = useRunStore((s) => s.rig);
@@ -10,46 +13,67 @@ export function HUD() {
   const roundTimer = useRunStore((s) => s.roundTimer);
   const gambleMult = useRunStore((s) => s.gambleMult);
 
-  const mm = Math.floor(roundTimer / 60).toString().padStart(1, "0");
+  const mm = Math.floor(roundTimer / 60).toString();
   const ss = Math.floor(roundTimer % 60).toString().padStart(2, "0");
 
   return (
-    <div className="flex flex-col gap-2 border-b border-white/10 bg-stone-950 p-2 text-xs font-medium text-white sm:text-sm" data-testid="game-hud">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="rounded bg-black/70 px-3 py-1.5">
-          Wave <span className="font-bold text-amber-300" data-testid="hud-wave">{wave}</span>
-          <span className="ml-2 text-xs text-white/60 uppercase" data-testid="hud-phase">{phase}</span>
-          {gambleMult > 1 && (
-            <span className="ml-2 rounded bg-rose-500/30 px-2 py-0.5 text-xs font-bold text-rose-200">
-              GAMBLE ×{gambleMult}
-            </span>
-          )}
+    <div
+      className="relative flex flex-col gap-2 p-2 text-amber-100 border-b-4"
+      data-testid="game-hud"
+      style={{
+        background: "linear-gradient(180deg, #18181b 0%, #0a0908 100%)",
+        borderColor: "#3f3f46",
+        ...FONT_PIXEL,
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <Badge testId="hud-wave-block">
+          <span className="text-amber-100/60 mr-1 text-base" style={FONT_HEAD}>W</span>
+          <span className="font-bold text-2xl text-amber-300" data-testid="hud-wave">{wave}</span>
+          <span className="ml-2 text-base text-amber-100/60 uppercase" data-testid="hud-phase">{phase}</span>
+        </Badge>
+        {gambleMult > 1 && (
+          <Pill color="#dc2626" testId="hud-gamble">GAMBLE ×{gambleMult}</Pill>
+        )}
+        <Pill
+          color={player.weaponMode === "melee" ? "#dc2626" : "#4ade80"}
+          testId="hud-weapon"
+        >
+          {player.weaponMode === "melee"
+            ? (player.weaponLocked ? "MELEE!" : "MELEE")
+            : "GUN"}
+        </Pill>
+        <Pill
+          color={player.dashCooldown <= 0 ? "#7ad8ff" : "#52525b"}
+          testId="hud-dash"
+        >
+          {player.dashCooldown <= 0 ? "DASH" : `DASH ${player.dashCooldown.toFixed(1)}`}
+        </Pill>
+        <Badge testId="hud-time-block">
+          <Icon glyph="⏱" />
           <span
-            data-testid="hud-weapon"
-            className={`ml-2 rounded px-2 py-0.5 text-xs font-bold ${player.weaponMode === "melee" ? "bg-rose-500/30 text-rose-200" : "bg-emerald-500/20 text-emerald-200"}`}
-          >
-            {player.weaponMode === "melee" ? (player.weaponLocked ? "MELEE (no ammo)" : "MELEE") : "GUN"}
-          </span>
-          <span
-            data-testid="hud-dash"
-            className={`ml-2 rounded px-2 py-0.5 text-xs font-bold ${player.dashCooldown <= 0 ? "bg-sky-500/30 text-sky-200" : "bg-white/10 text-white/40"}`}
-            title="Dash (Shift / E)"
-          >
-            {player.dashCooldown <= 0 ? "DASH" : `DASH ${player.dashCooldown.toFixed(1)}s`}
-          </span>
-        </div>
-        <Stat label="Time" value={`${mm}:${ss}`} accent={roundTimer < 10 ? "#ff6b6b" : "#e8edf3"} testId="hud-time" />
-        <Stat label="Kills" value={kills} testId="hud-kills" />
-        <Stat label="Scrap" value={unsecured} accent="#ffd84a" testId="hud-scrap" />
+            className="font-bold text-2xl ml-1"
+            style={{ color: roundTimer < 10 ? "#ff6b6b" : "#fde68a" }}
+            data-testid="hud-time"
+          >{`${mm}:${ss}`}</span>
+        </Badge>
+        <Badge testId="hud-kills-block">
+          <Icon glyph="☠" />
+          <span className="font-bold text-2xl ml-1" data-testid="hud-kills">{kills}</span>
+        </Badge>
+        <Badge testId="hud-scrap-block">
+          <Icon glyph="⚙" />
+          <span className="font-bold text-2xl ml-1 text-amber-300" data-testid="hud-scrap">{unsecured}</span>
+        </Badge>
       </div>
-      <div className="flex flex-wrap gap-3">
-        <Bar label="HP" value={player.hp} max={player.maxHp} color="#e85d3a" testId="hud-hp" />
-        <Bar label="RIG" value={rig.hp} max={rig.maxHp} color="#c9a84c" testId="hud-rig" />
-        <Bar
-          label={player.weaponMode === "melee" ? "MELEE" : "AMMO"}
+      <div className="flex flex-wrap gap-2 px-1">
+        <SegBar label="HP"  value={player.hp}  max={player.maxHp}  color="#4ade80" testId="hud-hp" />
+        <SegBar label="RIG" value={rig.hp}      max={rig.maxHp}     color="#c9a84c" testId="hud-rig" />
+        <SegBar
+          label={player.weaponMode === "melee" ? "MEL" : "AMMO"}
           value={player.ammo}
           max={player.maxAmmo}
-          color={player.ammo <= 0 ? "#ff6b6b" : "#73ffb8"}
+          color={player.ammo <= 0 ? "#dc2626" : "#ff7a18"}
           testId="hud-ammo"
         />
       </div>
@@ -57,26 +81,59 @@ export function HUD() {
   );
 }
 
-function Stat({ label, value, accent = "#e8edf3", testId }) {
+function Badge({ children, testId }) {
   return (
-    <div className="rounded bg-black/70 px-3 py-1.5" data-testid={testId}>
-      <span className="text-xs text-white/60 uppercase mr-2">{label}</span>
-      <span className="font-bold font-mono" style={{ color: accent }}>{value}</span>
+    <div
+      data-testid={testId}
+      className="flex items-center px-3 py-1 border-2"
+      style={{ background: "#0a0908", borderColor: "#3f3f46" }}
+    >
+      {children}
     </div>
   );
 }
 
-function Bar({ label, value, max, color, testId }) {
-  const pct = Math.max(0, Math.min(1, value / max));
+function Pill({ children, color, testId }) {
   return (
-    <div className="flex-1 min-w-[110px] rounded bg-black/70 px-2 py-1" data-testid={testId}>
-      <div className="flex justify-between text-xs">
-        <span>{label}</span>
-        <span>{Math.ceil(value)}/{max}</span>
+    <div
+      data-testid={testId}
+      className="px-3 py-1 border-2 text-base uppercase tracking-wider font-bold"
+      style={{ background: "#0a0908", borderColor: color, color }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Icon({ glyph }) {
+  return <span className="text-amber-100/60 text-xl leading-none">{glyph}</span>;
+}
+
+function SegBar({ label, value, max, color, testId }) {
+  const segs = 20;
+  const filled = Math.max(0, Math.min(segs, Math.round((value / max) * segs)));
+  const arr = Array.from({ length: segs });
+  return (
+    <div className="flex-1 min-w-[140px] flex items-center gap-2" data-testid={testId}>
+      <span className="w-12 text-amber-100/80 text-lg uppercase tracking-widest">{label}</span>
+      <div
+        className="flex flex-1 items-center gap-[2px] h-5 p-1 border-2"
+        style={{ background: "#09090b", borderColor: "#18181b" }}
+      >
+        {arr.map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 h-full"
+            style={{
+              background: i < filled ? color : "transparent",
+              boxShadow: i < filled ? "inset 0 0 4px rgba(0,0,0,0.6)" : "none",
+            }}
+          />
+        ))}
       </div>
-      <div className="h-2 w-full overflow-hidden rounded bg-white/10">
-        <div className="h-full" style={{ width: `${pct * 100}%`, background: color }} />
-      </div>
+      <span className="w-16 text-right text-amber-100/80 text-lg tabular-nums">
+        {Math.max(0, Math.ceil(value))}/{max}
+      </span>
     </div>
   );
 }
