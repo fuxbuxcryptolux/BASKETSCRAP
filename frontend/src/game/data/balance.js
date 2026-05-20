@@ -5,7 +5,8 @@ export const BALANCE = {
     baseMaxHp: 100,
     baseAttack: 20,
     baseDefense: 2,
-    baseSpeed: 240, // px/sec
+    baseSpeed: 280, // px/sec  [playtest fix: 240 -> 280 + inertia]
+    accel: 14,      // [playtest fix] velocity lerp rate per sec; gives natural feel
     attackRange: 70,
     attackArcDeg: 110,
     attackCooldown: 0.35, // sec
@@ -42,6 +43,7 @@ export const BALANCE = {
       bulletSpeed: 780,
       bulletRadius: 3,
       color: "#ff8a3a",
+      spreadRad: 0.16,  // [playtest fix] ~9° cone — spray ≠ sniper
     },
     holdToAutoSec: 0.18,
     bulletLifeSec: 0.9,

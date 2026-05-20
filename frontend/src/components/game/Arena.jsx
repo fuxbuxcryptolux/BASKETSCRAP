@@ -103,7 +103,9 @@ export function Arena() {
         const img = e.kind === "brute" ? IMG.brute : IMG.shambler;
         const size = e.radius * 2.4;
         if (img.complete && img.naturalWidth > 0) {
-          const flip = e.pos.x > rig.pos.x ? -1 : 1;
+          // [playtest fix] sprite faces direction of travel, tracked in store.
+          // Source PNGs face LEFT by default → flip when moving right.
+          const flip = (e.facingSign ?? 1) > 0 ? -1 : 1;
           ctx.save();
           ctx.translate(e.pos.x, e.pos.y);
           ctx.scale(flip, 1);

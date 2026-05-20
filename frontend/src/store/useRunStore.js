@@ -26,6 +26,7 @@ function makePlayer(upgrades) {
     attack: BALANCE.player.baseAttack + 4 * atkLvl,
     defense: BALANCE.player.baseDefense + 2 * defLvl,
     speed: BALANCE.player.baseSpeed + 20 * spdLvl,
+    velX: 0, velY: 0,                       // [playtest fix] inertia
     attackCooldown: 0,
     invulnTimer: 0,
     facing: 0,
@@ -87,6 +88,7 @@ function spawnEnemy(kind) {
     contactInterval: def.contactDamageInterval,
     rigContactTimer: 0, playerContactTimer: 0,
     scrapReward: def.scrapReward, color: def.color,
+    prevX: pos.x, facingSign: pos.x > BALANCE.arena.rigX ? -1 : 1,
   };
 }
 
@@ -232,17 +234,26 @@ export const useRunStore = create((set, get) => ({
     let unsecured = s.unsecured;
     let kills = s.kills;
 
-    // ----- Player movement -----
+    // ----- Player movement [playtest fix: velocity smoothing for natural feel] -----
     const ix = s.input.moveX;
     const iy = s.input.moveY;
     const mag = Math.hypot(ix, iy);
+    let targetVx = 0;
+    let targetVy = 0;
     if (mag > 0.001 && P.alive) {
       const nx = ix / mag;
       const ny = iy / mag;
-      P.pos.x += nx * P.speed * dt;
-      P.pos.y += ny * P.speed * dt;
+      targetVx = nx * P.speed;
+      targetVy = ny * P.speed;
       P.facing = Math.atan2(ny, nx);
     }
+    // Lerp current velocity toward target. accel=14 → ~0.15s to full speed,
+    // ~0.15s to stop. Feels like real legs instead of a teleport.
+    const accelStep = Math.min(1, BALANCE.player.accel * dt);
+    P.velX += (targetVx - P.velX) * accelStep;
+    P.velY += (targetVy - P.velY) * accelStep;
+    P.pos.x += P.velX * dt;
+    P.pos.y += P.velY * dt;
     P.pos.x = Math.max(16, Math.min(BALANCE.arena.width - 16, P.pos.x));
     P.pos.y = Math.max(16, Math.min(BALANCE.arena.height - 16, P.pos.y));
     P.attackCooldown = Math.max(0, P.attackCooldown - dt);
@@ -276,15 +287,24 @@ export const useRunStore = create((set, get) => ({
       P.weaponMode = P.weaponMode === "gun" ? "melee" : "gun";
     }
 
-    // ----- Aim [fix 1.3] -----
-    // semi-auto tap: auto-aim assist when idle (kept).
-    // full-auto held-fire: MANUAL only (P.facing).
+    // ----- Aim [playtest fix: full-auto now also auto-aims when idle, but
+    // with a small bullet spread so spray ≠ pixel-perfect god mode] -----
+    // semi-auto tap: pixel-accurate auto-aim assist when idle (kept).
+    // full-auto held-fire: auto-aims at nearest enemy when idle, manual otherwise,
+    //                      with a small randomised cone added per bullet.
     let semiAim = P.facing;
+    let autoAim = P.facing;
     if (mag <= 0.001) {
       const n = nearestEnemy(enemies, P.pos);
-      if (n) semiAim = Math.atan2(n.pos.y - P.pos.y, n.pos.x - P.pos.x);
+      if (n) {
+        const target = Math.atan2(n.pos.y - P.pos.y, n.pos.x - P.pos.x);
+        semiAim = target;
+        autoAim = target;
+        // Snap visual facing to target when idle so the muzzle line points
+        // somewhere meaningful instead of a stale direction.
+        P.facing = target;
+      }
     }
-    const autoAim = P.facing;
 
     const doMelee = (aim) => {
       if (!P.alive || P.meleeCooldown > 0) return;
@@ -330,7 +350,9 @@ export const useRunStore = create((set, get) => ({
       if (s.input.fireHeld) {
         P.holdTime += dt;
         if (P.alive && P.holdTime >= BALANCE.gun.holdToAutoSec && P.fireCooldown <= 0 && P.ammo >= BALANCE.gun.auto.ammoCost) {
-          const b = fireBullet(P, "auto", autoAim);
+          // [playtest fix] full-auto bullet spread so spray-and-pray isn't perfect.
+          const spread = (Math.random() - 0.5) * BALANCE.gun.auto.spreadRad;
+          const b = fireBullet(P, "auto", autoAim + spread);
           b.damage += P.weaponBonus;
           bullets.push(b);
           P.ammo -= BALANCE.gun.auto.ammoCost;
@@ -397,6 +419,12 @@ export const useRunStore = create((set, get) => ({
       dx /= norm; dy /= norm;
       e.pos.x += dx * e.speed * dt;
       e.pos.y += dy * e.speed * dt;
+      // [playtest fix] track horizontal movement so the sprite flips to FACE
+      // the direction of travel (no more walking-backwards zombies).
+      const frameDx = e.pos.x - e.prevX;
+      if (frameDx > 0.5) e.facingSign = 1;
+      else if (frameDx < -0.5) e.facingSign = -1;
+      e.prevX = e.pos.x;
       e.rigContactTimer = Math.max(0, e.rigContactTimer - dt);
       e.playerContactTimer = Math.max(0, e.playerContactTimer - dt);
 
