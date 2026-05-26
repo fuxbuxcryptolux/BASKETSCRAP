@@ -45,17 +45,35 @@ export default function Run() {
   return (
     <div className="relative flex min-h-screen flex-col bg-black" data-testid="run-page">
       <HUD />
-      <div className="relative mx-auto w-full max-w-[min(100vw,90vh)]">
-        <Arena />
-        <MobileControls />
-        <button
-          data-testid="surrender-btn"
-          className="absolute right-2 bottom-2 z-10 rounded bg-black/60 px-3 py-1.5 text-xs text-white/70 hover:bg-black/80"
-          onClick={() => surrender(secured)}
-        >
-          Surrender
-        </button>
+
+      {/* Arena fills available space between HUD and control strip; never
+          covered by the on-screen joystick/fire buttons (they live in their
+          own strip below). max-h ensures we don't overflow on tall portrait. */}
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+        <div className="relative w-full" style={{ maxWidth: "min(100vw, calc(100vh - 220px))" }}>
+          <Arena />
+          {/* Surrender button moved to upper-right of arena, well away from
+              the FIRE/DASH/SWAP buttons. */}
+          <button
+            data-testid="surrender-btn"
+            className="absolute right-2 top-2 z-10 px-2 py-1 text-xs"
+            onClick={() => surrender(secured)}
+            style={{
+              fontFamily: "'VT323', monospace",
+              background: "rgba(10,9,8,0.85)",
+              color: "#ffa872",
+              border: "2px solid #9a3412",
+              letterSpacing: "0.1em",
+            }}
+          >
+            ⚑ SURRENDER
+          </button>
+        </div>
       </div>
+
+      {/* Dedicated controls strip — only renders on touch devices. */}
+      <MobileControls />
+
       <DebugPanel />
 
       {phase === "cashout" && (

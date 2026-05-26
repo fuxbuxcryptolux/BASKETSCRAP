@@ -1,21 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRunStore } from "../../store/useRunStore";
 
-const STICK_RADIUS = 60;
-const KNOB_RADIUS = 28;
+const STICK_RADIUS = 48;
+const KNOB_RADIUS = 22;
 
 export function MobileControls() {
   const setInput = useRunStore((s) => s.setInput);
-  const [show, setShow] = useState(false);
   const stickRef = useRef(null);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
   const touchIdRef = useRef(null);
-
-  useEffect(() => {
-    const onTouch = () => setShow(true);
-    window.addEventListener("touchstart", onTouch, { once: true });
-    return () => window.removeEventListener("touchstart", onTouch);
-  }, []);
 
   const updateFromTouch = (clientX, clientY) => {
     const el = stickRef.current;
@@ -34,14 +27,26 @@ export function MobileControls() {
     setInput({ moveX: dx / STICK_RADIUS, moveY: dy / STICK_RADIUS });
   };
 
-  if (!show) return null;
-
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-between p-4">
+    <div
+      data-testid="mobile-controls"
+      className="flex w-full items-center justify-between px-3 py-2 md:hidden"
+      style={{
+        background: "linear-gradient(180deg,#0a0908 0%, #18181b 100%)",
+        borderTop: "3px solid #3f3f46",
+        minHeight: 124,
+      }}
+    >
       <div
         ref={stickRef}
-        className="pointer-events-auto relative rounded-full bg-white/10 backdrop-blur"
-        style={{ width: STICK_RADIUS * 2, height: STICK_RADIUS * 2 }}
+        className="relative rounded-full border-2 select-none"
+        style={{
+          width: STICK_RADIUS * 2,
+          height: STICK_RADIUS * 2,
+          background: "rgba(20,12,6,0.65)",
+          borderColor: "#3f3f46",
+          touchAction: "none",
+        }}
         onTouchStart={(e) => {
           const t = e.changedTouches[0];
           touchIdRef.current = t.identifier;
@@ -59,42 +64,73 @@ export function MobileControls() {
         }}
       >
         <div
-          className="absolute rounded-full bg-white/40"
+          className="absolute rounded-full"
           style={{
             width: KNOB_RADIUS * 2,
             height: KNOB_RADIUS * 2,
             left: STICK_RADIUS - KNOB_RADIUS + knob.x,
             top: STICK_RADIUS - KNOB_RADIUS + knob.y,
+            background: "#ff7a18",
+            boxShadow: "inset 0 0 6px rgba(0,0,0,0.6)",
           }}
         />
       </div>
-      <div className="pointer-events-auto flex flex-col items-end gap-3">
-        <button
-          data-testid="mobile-swap-btn"
-          className="h-12 w-12 rounded-full bg-amber-500/70 text-[10px] font-bold text-black shadow-lg active:bg-amber-600/80 select-none"
+
+      <div className="flex items-end gap-2">
+        <ActionButton
+          testId="mobile-swap-btn"
+          label="SWAP"
+          color="#ffa872"
+          border="#9a3412"
+          size={56}
           onTouchStart={(e) => { e.preventDefault(); setInput({ swapPressed: true }); }}
-          onTouchEnd={(e) => e.preventDefault()}
-        >
-          SWAP
-        </button>
-        <button
-          data-testid="mobile-dash-btn"
-          className="h-14 w-14 rounded-full bg-sky-500/70 text-xs font-bold text-white shadow-lg active:bg-sky-600/80 select-none"
+        />
+        <ActionButton
+          testId="mobile-dash-btn"
+          label="DASH"
+          color="#7ad8ff"
+          border="#0e3a52"
+          size={64}
           onTouchStart={(e) => { e.preventDefault(); setInput({ dashPressed: true }); }}
-          onTouchEnd={(e) => e.preventDefault()}
-        >
-          DASH
-        </button>
-        <button
-          data-testid="mobile-fire-btn"
-          className="h-28 w-28 rounded-full bg-red-500/70 text-lg font-bold text-white shadow-lg active:bg-red-600/80 select-none"
+        />
+        <ActionButton
+          testId="mobile-fire-btn"
+          label="FIRE"
+          color="#ff7a18"
+          border="#9a3412"
+          size={96}
           onTouchStart={(e) => { e.preventDefault(); setInput({ firePressed: true, fireHeld: true }); }}
           onTouchEnd={(e) => { e.preventDefault(); setInput({ fireHeld: false }); }}
           onTouchCancel={(e) => { e.preventDefault(); setInput({ fireHeld: false }); }}
-        >
-          FIRE
-        </button>
+        />
       </div>
     </div>
+  );
+}
+
+function ActionButton({ testId, label, color, border, size, onTouchStart, onTouchEnd, onTouchCancel }) {
+  return (
+    <button
+      data-testid={testId}
+      className="rounded-full text-black select-none active:translate-y-0.5"
+      style={{
+        width: size,
+        height: size,
+        background: color,
+        borderTop: `3px solid ${color}`,
+        borderLeft: `3px solid ${color}`,
+        borderRight: `3px solid ${border}`,
+        borderBottom: `3px solid ${border}`,
+        fontFamily: "'VT323', monospace",
+        fontSize: size > 80 ? 22 : 16,
+        fontWeight: 700,
+        letterSpacing: "0.05em",
+      }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}
+    >
+      {label}
+    </button>
   );
 }
