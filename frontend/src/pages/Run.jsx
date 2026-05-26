@@ -43,37 +43,52 @@ export default function Run() {
   }, [phase, endSummary, addSecured, markSummaryPersisted]);
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-black" data-testid="run-page">
+    <div
+      className="relative flex flex-col bg-black overflow-hidden"
+      data-testid="run-page"
+      style={{ height: "100dvh", width: "100vw" }}
+    >
       <HUD />
 
-      {/* Arena fills available space between HUD and control strip; never
-          covered by the on-screen joystick/fire buttons (they live in their
-          own strip below). max-h ensures we don't overflow on tall portrait. */}
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
-        <div className="relative w-full" style={{ maxWidth: "min(100vw, calc(100vh - 220px))" }}>
-          <Arena />
-          {/* Surrender button moved to upper-right of arena, well away from
-              the FIRE/DASH/SWAP buttons. */}
-          <button
-            data-testid="surrender-btn"
-            className="absolute right-2 top-2 z-10 px-2 py-1 text-xs"
-            onClick={() => surrender(secured)}
-            style={{
-              fontFamily: "'VT323', monospace",
-              background: "rgba(10,9,8,0.85)",
-              color: "#ffa872",
-              border: "2px solid #9a3412",
-              letterSpacing: "0.1em",
-            }}
+      {/* Arena container: fills remaining space, locks to square. */}
+      <div className="relative flex-1 flex items-center justify-center min-h-0 min-w-0 overflow-hidden">
+        <div
+          className="relative"
+          style={{
+            // Square sized to whichever dimension is smaller. Using the
+            // CSS aspect-ratio property + a 1:1 sizing trick: set height to
+            // 100% and width auto (aspect-ratio fills width), with max-width
+            // 100% as a safety clamp on tall phones.
+            height: "100%",
+            aspectRatio: "1 / 1",
+            maxWidth: "100%",
+          }}
+        >
+          {/* Inner clamp: when maxWidth caps us, force height to follow. */}
+          <div
+            className="relative h-full w-full"
+            style={{ maxHeight: "100%" }}
           >
-            ⚑ SURRENDER
-          </button>
+            <Arena />
+            <button
+              data-testid="surrender-btn"
+              className="absolute right-1 top-1 z-10 px-2 py-1 text-xs"
+              onClick={() => surrender(secured)}
+              style={{
+                fontFamily: "'VT323', monospace",
+                background: "rgba(10,9,8,0.85)",
+                color: "#ffa872",
+                border: "2px solid #9a3412",
+                letterSpacing: "0.1em",
+              }}
+            >
+              ⚑ END
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Dedicated controls strip — only renders on touch devices. */}
       <MobileControls />
-
       <DebugPanel />
 
       {phase === "cashout" && (

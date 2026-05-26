@@ -98,7 +98,7 @@ export function Arena() {
       const rigPct = rig.hp / rig.maxHp;
       // [visual] new ring-shaped rig graphic, clipped to a circle so any
       // residual background pixels from the source jpg don't leak.
-      const rigDrawR = BALANCE.arena.rigRadius * 2.6;
+      const rigDrawR = BALANCE.arena.rigRadius * 3.4;
       if (IMG.rig.complete && IMG.rig.naturalWidth > 0) {
         ctx.save();
         ctx.beginPath();
@@ -126,8 +126,8 @@ export function Arena() {
         if (img.complete && img.naturalWidth > 0) {
           // [visual] sprites face RIGHT by default → mirror when moving left.
           const flip = (e.facingSign ?? 1) < 0 ? -1 : 1;
-          // preserve aspect ratio; scale height to enemy radius * 2.6
-          const targetH = e.radius * 2.6;
+          // [mobile readability] target height scales radius up generously.
+          const targetH = e.radius * 3.6;
           const targetW = (img.naturalWidth / img.naturalHeight) * targetH;
           ctx.save();
           ctx.translate(e.pos.x, e.pos.y);
@@ -138,10 +138,10 @@ export function Arena() {
           ctx.fillStyle = e.color;
           ctx.beginPath(); ctx.arc(e.pos.x, e.pos.y, e.radius, 0, Math.PI * 2); ctx.fill();
         }
-        const barW = e.radius * 2;
+        const barW = e.radius * 2.4;
         const pct = e.hp / e.maxHp;
-        ctx.fillStyle = "#000"; ctx.fillRect(e.pos.x - barW / 2, e.pos.y - e.radius - 10, barW, 3);
-        ctx.fillStyle = "#73ffb8"; ctx.fillRect(e.pos.x - barW / 2, e.pos.y - e.radius - 10, barW * pct, 3);
+        ctx.fillStyle = "#000"; ctx.fillRect(e.pos.x - barW / 2, e.pos.y - e.radius - 12, barW, 4);
+        ctx.fillStyle = "#73ffb8"; ctx.fillRect(e.pos.x - barW / 2, e.pos.y - e.radius - 12, barW * pct, 4);
       }
 
       for (const b of s.bullets) {
@@ -152,7 +152,7 @@ export function Arena() {
       const P = s.player;
       // [visual] hero sprite now faces UP by default → rotate by facing + PI/2.
       if (IMG.hero.complete && IMG.hero.naturalWidth > 0) {
-        const targetH = 56;
+        const targetH = 84;
         const targetW = (IMG.hero.naturalWidth / IMG.hero.naturalHeight) * targetH;
         ctx.save();
         ctx.translate(P.pos.x, P.pos.y);
@@ -222,7 +222,7 @@ export function Arena() {
       width={BALANCE.arena.width}
       height={BALANCE.arena.height}
       data-testid="game-arena-canvas"
-      style={{ width: "100%", height: "auto", aspectRatio: "1 / 1", display: "block", background: "#1a1614", touchAction: "none" }}
+      style={{ width: "100%", height: "100%", display: "block", background: "#1a1614", touchAction: "none" }}
     />
   );
 }
